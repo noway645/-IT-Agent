@@ -1,0 +1,39 @@
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 版本控制
+.git/
+.gitignore
+
+# 敏感文件（容器内通过 env_file 注入，不打进镜像）
+.env
+.env.*
+
+# 本地数据库（已迁移到 PostgreSQL，不入镜像）
+it_helper.db
+it_helper.db-journal
+
+# 向量库（通过 volume 持久化，不入镜像）
+chroma_db/
+
+# IDE
+.idea/
+.vscode/
+
+# 文档与测试
+*.md
+!knowledge_base/*.md
+test_*.py
+verify_*.py
+
+# 临时文件
+*.log
+*.tmp

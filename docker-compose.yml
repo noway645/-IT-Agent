@@ -1,0 +1,48 @@
+# 企业 IT 助手 - 生产编排
+# 包含：PostgreSQL 16（持久化卷）+ App（Gradio）
+# 启动：docker compose up -d
+# 首次从旧库迁移：docker compose run --rm app python migrate_sqlite_to_pg.py
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: it_helper_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB:-it_helper}
+      POSTGRES_USER: ${PG_USER:-it_helper}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?PG_PASSWORD 必须在 .env 中设置}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"  # 仅本机可见，不暴露公网
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-it_helper} -d ${PG_DB:-it_helper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build: .
+    container_name: it_helper_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # 容器内连 postgres 服务名
+      PG_HOST: postgres
+      PG_PORT: "5432"
+    ports:
+      - "7860:7860"
+    volumes:
+      # 向量库持久化（首次构建后避免重复 embedding）
+      - chroma_data:/app/chroma_db
+      # 知识库热更新（可选：宿主机改 md 后重启 app 即生效）
+      - ./knowledge_base:/app/knowledge_base:ro
+
+volumes:
+  pg_data:
+  chroma_data:
